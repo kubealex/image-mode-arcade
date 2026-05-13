@@ -1,4 +1,4 @@
-FROM registry.redhat.io/rhel10/rhel-bootc:10.1
+FROM registry.redhat.io/rhel10/rhel-bootc:latest
 
 # Install RPMs and clean up the cache in the same layer to optimize the build process and reduce the image size by minimizing the number of layers created during the build process. This also helps in reducing the overall image size by minimizing the number of intermediate layers created during the build process.
 # Install GNOME and enable graphical.target as default
