@@ -7,3 +7,4 @@ cr_pat.txt
 *.rom
 nes_*
 mamerom_*
+.env
