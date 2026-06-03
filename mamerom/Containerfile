@@ -6,5 +6,4 @@ FROM localhost/arcade-mame:latest
 COPY mamerom.zip /opt/mame/roms/mamerom.zip
 
 # 2. Autostart retroarch 
-COPY mame_arcade.sh /opt/arcade/
-RUN chmod +x /opt/arcade/retro_arcade.sh
+COPY --chmod=755 mame_arcade.sh /opt/arcade/mame_arcade.sh

@@ -18,11 +18,11 @@ RUN flatpak remote-add flathub https://dl.flathub.org/repo/flathub.flatpakrepo &
 
 # 3. Setup MAME directories for ROMS and config
 RUN mkdir -p /opt/mame/roms /opt/arcade
-COPY --chmod=644 mame.ini /opt/mame/mame.ini
 
 # 4. Autostart script
 COPY --chmod=755 mame_arcade.sh /opt/arcade/mame_arcade.sh
 
 # 5. Populating autostart and applications for launching Arcade games
 COPY --chmod=644 arcade_autostart.desktop /usr/share/arcade/arcade_autostart.desktop
+COPY --chmod=644 mame.ini /usr/share/arcade/mame.ini
 COPY tmpfiles.d/ /usr/lib/tmpfiles.d/

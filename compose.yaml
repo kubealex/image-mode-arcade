@@ -1,0 +1,46 @@
+name: arcade-dev
+
+services:
+  arcade-os:
+    build:
+      context: arcade_os
+      dockerfile: Containerfile
+    image: localhost/arcade-os:latest
+    tags: 
+      - localhost/arcade-os:dev
+      - quay.io/$QUAY_USER/arcade-os:stage
+      - quay.io/$QUAY_USER/arcade-os:$TAG_DATE
+
+  nes-flatpak:
+    build:
+      context: arcade_nes_flatpak
+      dockerfile: Containerfile
+    image: localhost/arcade-nes:latest
+    tags:
+      - localhost/arcade-nes:dev
+      - quay.io/$QUAY_USER/arcade-nes:stage
+      - quay.io/$QUAY_USER/arcade-nes:$TAG_DATE
+    depends_on:
+      - arcade-os
+
+  nes-pacman:
+    build:
+      context: nes_pacman
+      dockerfile: Containerfile
+    image: localhost/arcade-pacman:latest
+    tags:
+      - localhost/arcade-pacman:dev
+      - quay.io/$QUAY_USER/arcade-pacman:stage
+      - quay.io/$QUAY_USER/arcade-pacman:$TAG_DATE
+    depends_on:
+      - nes-flatpak
+
+# mame-flatpak:
+#     build:
+#       context: arcade_mame_flatpak
+#       dockerfile: Containerfile
+#     tags:
+#       - quay.io/$QUAY_USER/arcade-mame:dev
+#       - quay.io/$QUAY_USER/arcade-mame:$TAG_DATE
+#     depends_on:
+#       - arcade-os

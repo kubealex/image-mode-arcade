@@ -97,7 +97,7 @@ sudo mv qcow2/disk.qcow2 /var/lib/libvirt/images/arcade.qcow2
 
 ```bash
 virt-install --name arcade \
-    --vcpus 2 --memory 4096 \ 
+    --vcpus 2 --memory 4096 \
     --disk /var/lib/libvirt/images/arcade.qcow2,device=disk,bus=virtio,format=qcow2 \
     --os-variant rhel10-unknown --boot uefi --virt-type kvm \
     --video vga
