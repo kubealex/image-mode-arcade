@@ -1,0 +1,168 @@
+---
+# ansible-playbook -i localhost -u redhat build-push-arcade.yaml
+
+- name: Build and push podman container to quay.io
+  hosts: localhost
+  gather_facts: true
+  vars_files:
+    - secrets.yaml
+  vars:
+    container_registry: "{{ custom_registry_url }}/{{ custom_registry_username }}"
+    container_name: arcade
+    container_tag: latest
+    dockerfile_path: ./Dockerfile
+    container_image: "{{ container_registry }}/{{ container_name }}:{{ container_tag }}"
+
+    containerfile_path: "./Containerfile"
+    image_build_context: "."
+    working_dir: "{{ lookup('env','HOME') }}/arcade"
+    quay_expires_after: "2w"
+    image_tags:
+      - latest
+      - dev
+      - "{{ ansible_date_time.date }}"
+
+    nes_roms:
+      - image_name: "arcade-pacman"
+        directory: "nes_pacman"
+      - image_name: "arcade-mario"
+        directory: "nes_mario"
+      - image_name: "arcade-donkeykong"
+        directory: "nes_donkeykong"
+      - image_name: "arcade-asteroids"
+        directory: "nes_asteroids"
+      - image_name: "arcade-doom"
+        directory: "nes_doom"
+      - image_name: "arcade-spaceinvaders"
+        directory: "nes_spaceinvaders"
+      - image_name: "arcade-1942"
+        directory: "nes_1942"
+
+    mame_roms:
+      - image_name: "arcade-m1942"
+        directory: "mamerom_m1942"
+      - image_name: "arcade-starfire"
+        directory: "mamerom_starfire"
+      - image_name: "arcade-targ"
+        directory: "mamerom_targ"
+      - image_name: "arcade-test"
+        directory: "mamerom_test"
+
+
+  tasks:
+    - name: 🔑 Arcade CI/CD | Login to registry
+      no_log: true
+      containers.podman.podman_login:
+        registry: "{{ item.registry }}"
+        username: "{{ item.username }}"
+        password: "{{ item.password }}"
+      loop:
+        - registry: "{{ custom_registry_url }}"
+          username: "{{ custom_registry_username }}"
+          password: "{{ custom_registry_password }}"
+        - registry: "{{ redhat_registry_url }}"
+          username: "{{ redhat_registry_username }}"
+          password: "{{ redhat_registry_password }}"
+
+    - name: 💾 Arcade CI/CD | Set working directory
+      ansible.builtin.set_fact:
+        workdir: "{{ working_dir | default(lookup('env', 'HOME'), true) }}"
+
+    - name: 🥾 Arcade CI/CD | Build arcade-os Image
+      containers.podman.podman_image:
+        name: "arcade-os"
+        build_args:
+          force_rm: true
+          file: "{{ working_dir }}/arcade_os/{{ containerfile_path }}"
+          extra_args: "--label quay.expires-after={{ quay_expires_after }}"
+        path: "{{ working_dir }}/arcade_os"
+        pull: true
+        push: false
+        state: present
+      loop: "{{ image_tags }}"
+
+    - name: ⬆️ Arcade CI/CD | Push arcade-os to quay.io with all tags
+      containers.podman.podman_image:
+        name: "arcade-os"
+        push: true
+        push_args:
+          dest: "{{ custom_registry_url }}/{{ custom_registry_username }}/arcade-os:{{ item }}"
+      loop: "{{ image_tags }}"
+
+    - name: 🧰 Arcade CI/CD | Build arcade nes flatpak emulator Image
+      containers.podman.podman_image:
+        name: "arcade-nes"
+        build_args:
+          force_rm: true
+          file: "{{ working_dir }}/arcade_nes_flatpak/{{ containerfile_path }}"
+          extra_args: "--label quay.expires-after={{ quay_expires_after }}"
+        path: "{{ working_dir }}/{{ image_build_context }}/arcade_nes_flatpak"
+        pull: true
+        push: false
+        state: present
+      loop: "{{ image_tags }}"
+
+    - name: ⬆️ Arcade CI/CD | Push arcade-nes to quay.io with all tags
+      containers.podman.podman_image:
+        name: "arcade-nes"
+        push: true
+        push_args:
+          dest: "{{ custom_registry_url }}/{{ custom_registry_username }}/arcade-nes:{{ item }}"
+      loop: "{{ image_tags }}"
+
+    - name: 🧰 Arcade CI/CD | Build arcade mame flatpak emulator Image
+      containers.podman.podman_image:
+        name: "arcade-mame"
+        build_args:
+          force_rm: true
+          file: "{{ working_dir }}/arcade_mame_flatpak/{{ containerfile_path }}"
+          extra_args: "--label quay.expires-after={{ quay_expires_after }}"
+        path: "{{ working_dir }}/{{ image_build_context }}/arcade_mame_flatpak"
+        pull: true
+        push: false
+        state: present
+      loop: "{{ image_tags }}"
+
+    - name: ⬆️ Arcade CI/CD | Push arcade-mame to quay.io with all tags
+      containers.podman.podman_image:
+        name: "arcade-mame"
+        push: true
+        push_args:
+          dest: "{{ custom_registry_url }}/{{ custom_registry_username }}/arcade-mame:{{ item }}"
+      loop: "{{ image_tags }}"
+
+    - name: 🕹️ Image Mode Arcade CI/CD | Build and push NES ROMs Images
+      block:
+        - name: 🛠️ Arcade CI/CD | Build NES ROM images
+          containers.podman.podman_image:
+            name: "{{ item.0.image_name }}"
+            build_args:
+              force_rm: true
+              file: "{{ working_dir }}/{{ item.0.directory }}/{{ containerfile_path }}"
+              extra_args: "--label quay.expires-after={{ quay_expires_after }}"
+            path: "{{ working_dir }}/{{ item.0.directory }}"
+            pull: true
+            push: true
+            push_args:
+              dest: "{{ container_registry }}/{{ item.0.image_name }}:{{ item.1 }}"
+          with_nested:
+            - "{{ nes_roms }}"
+            - "{{ image_tags }}"
+
+    - name: 🕹️ Image Mode Arcade CI/CD | Build and push MAME ROMs Images
+      block:
+        - name: 🛠️ Arcade CI/CD | Build and push MAME ROM images
+          containers.podman.podman_image:
+            name: "{{ container_registry }}/{{ item.0.image_name }}:{{ item.1 }}"
+            build_args:
+              force_rm: true
+              file: "{{ working_dir }}/{{ item.0.directory }}/{{ containerfile_path }}"
+              extra_args: "--label quay.expires-after={{ quay_expires_after }}"
+            path: "{{ working_dir }}/{{ item.0.directory }}"
+            pull: true
+            push: true
+            push_args:
+              dest: "{{ container_registry }}/{{ item.0.image_name }}:{{ item.1 }}"
+          with_nested:
+            - "{{ mame_roms }}"
+            - "{{ image_tags }}"
