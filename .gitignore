@@ -8,3 +8,4 @@ cr_pat.txt
 nes_*
 mamerom_*
 .env
+secrets.yaml
