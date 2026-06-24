@@ -74,23 +74,15 @@ podman build -t arcade-mamegame:1 -t arcade-mamegame:latest -f Containerfile
 9. Create the disk image. This example is for a qcow2 VM disk image.
 
 ```bash
-sudo podman run \
-    --rm \
-    -it \
-    --privileged \
-    --pull=newer \
-    --security-opt label=type:unconfined_t \
-    -v $(pwd)/config.toml:/config.toml:ro \
-    -v $(pwd):/output \
-    -v /var/lib/containers/storage:/var/lib/containers/storage registry.redhat.io/rhel10/bootc-image-builder:latest \
-    --type qcow2 \
-    arcade-mamegame:latest
+sudo image-builder build qcow2 \
+    --blueprint config.toml \
+    --bootc-ref=quay.io/$QUAY_USER/arcade-pacman:latest
 ```
 
 10. Move or copy the VM disk to your pool, in our example that will be:
 
 ```bash
-sudo mv qcow2/disk.qcow2 /var/lib/libvirt/images/arcade.qcow2
+sudo mv bootc-rhel-10.1-qcow2-x86_64/bootc-rhel-10.1-qcow2-x86_64.qcow2 /var/lib/libvirt/images/arcade.qcow2
 ```
 
 11. Install the VM
