@@ -3,7 +3,7 @@ FROM localhost/arcade-nes:latest
 # Note: You need to download a NES ROM and place it in the same directory as this Containerfile
 # and replace "nesrom.zip" in this Containerfile and in retro_arcade.sh with the filename of the .nes ROM file.
 # 1. Copy your MAME ROM zip file
-COPY mamerom.nes /opt/retroarch/roms/nesrom.nes
+COPY nesrom.nes /opt/retroarch/roms/nesrom.nes
 
-# 2. Autostart retroarch 
+# 2. Autostart retroarch
 COPY --chmod=755 retro_arcade.sh /opt/arcade/retro_arcade.sh
